@@ -23,6 +23,7 @@
       - [方法](#方法)
 
 ### 演示地址
+
 [演示地址](https://www.bilibili.com/video/BV1rr4y1x7Dr/)
 
 ### 安装依赖
@@ -52,6 +53,7 @@ npm install --save cheese-vte
 ### 组件使用
 
 安装完成组件依赖后，在main.js里面需要引用以下2个路径
+
 ```javascript
 main.js
 import cheeseVte from 'cheese-vte'
@@ -72,13 +74,36 @@ cheese-vte 目前还是处于开发阶段，会不断的更新迭代，目前存
 
 #### 属性
 
-参数  | <div align="center">说明</div>  | 类型  | 可选值  | 默认值
- ---- | ----- | ----   | ----   | ----  
- <div align="center">align</div>  | <div align="center">对齐方式</div> | <div align="center">String</div>  | <div align="center">left/center/right</div>  | <div align="center">center</div>
- <div align="center">width</div>  | <div align="center">表格宽度</div> | <div align="center">String</div>  |  <div align="center">null</div>  | <div align="center">100%</div>
+<table>
+    <tr>
+        <th>参数</th>
+        <th>说明</th>
+        <th>类型</th>
+        <th>可选值</th>
+        <th>默认值</th>
+    </tr>
+    <tr>
+        <td>align</td>
+        <td>对齐方式</td>
+        <td>String</td>
+        <td>left/center/right</td>
+        <td>center</td>
+    </tr>
+ </table>
 
 #### 方法
 
-方法名  | <div align="center">说明</div>  | 类型  | 返回参数
----- | ----- | ----   | ----   | ----  
-<div align="center">getTabData</div>  | <div align="center">返回一个Object对象的表格数据内容;list:表头,data:表格内容;</div> | <div align="center">Object</div> | <div align="center">{list,data}</div>
+ <table>
+    <tr>
+        <th>方法名</th>
+        <th>说明</th>
+        <th>类型</th>
+        <th>返回参数</th>
+    </tr>
+    <tr>
+        <td>getTabData</td>
+        <td>返回一个Object对象的表格数据内容;list:表头,data:表格内容;对齐方式</td>
+        <td>Object</td>
+        <td>{list,data}</td>
+    </tr>
+ </table>
