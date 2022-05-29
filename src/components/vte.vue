@@ -1,7 +1,7 @@
 <template>
-  <div style="width: 100%;">
-    <div style="width:90%;margin: 10px auto;">
-      <table class="vex-table" width=100% :style="'text-align:' + align">
+  <div>
+    <div :style="'width:'+ width">
+      <table class="vte-table" width=100% :style="'text-align:' + align">
         <tr v-for="(i,index) in list" :key="index">
           <th :colspan="j.colspanTh" :rowspan="j.rowspan" v-for="(j,key) in i.list" :key="key" v-show="j.isShow"
             :class="j.isThActive?'thActive':''" @click="choose(index,key)" @dblclick="bothDblclickTH(index,key)"
@@ -48,6 +48,10 @@
       align:{
         type:String,
         default:'center'
+      },
+      width:{
+        type:[String],
+        default:'100%'
       }
     },
     data() {
@@ -55,7 +59,6 @@
         screenWidth: document.body.clientWidth,
         colspanTh: 1,
         tt: true,
-        width: 60,
         x: 0,
         y: 0,
         list: [
@@ -564,26 +567,29 @@
         // }
         //初始化
         this.init();
+      },
+      //获取表格内容
+      getTabData(){
+        return {list:this.list,data:this.data};
       }
-
     },
   }
 </script>
 
 <style scoped>
-  .vex-table,
-  .vex-table tr th,
-  .vex-table tr td {
+  .vte-table,
+  .vte-table tr th,
+  .vte-table tr td {
     border-collapse: collapse;
     padding: 0;
   }
 
-  .vex-table tr td {
+  .vte-table tr td {
     border: 1px solid rgb(229, 229, 229);
     height: 30px;
   }
 
-  .vex-table tr th {
+  .vte-table tr th {
     background-color: #EDF1F7;
     border: 1px solid #fff;
     height: 36px;
@@ -592,7 +598,7 @@
     font-weight: 600;
   }
 
-  .vex-table {
+  .vte-table {
     /* border-collapse: collapse; */
     position: relative;
     right: 0;
