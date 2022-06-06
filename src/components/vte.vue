@@ -5,7 +5,7 @@
         <tr v-for="(i,index) in list" :key="index">
           <th :colspan="j.colspanTh" :rowspan="j.rowspan" v-for="(j,key) in i.list" :key="key" v-show="j.isShow"
             :class="j.isThActive?'thActive':''" @click="choose(index,key)" @dblclick="bothDblclickTH(index,key)"
-            @contextmenu.prevent="rightClick($event,'th')">
+            @contextmenu.prevent="rightClick($event,'th',index,key)">
             <input v-if="j.isThEditor" :ref="'inputfocus'+key" v-model.trim="j.name" @blur="j.isThEditor = false" />
             <div v-else>{{j.name}}</div>
           </th>
@@ -15,7 +15,8 @@
           <td :colspan="j.colspanTh" :rowspan="j.rowspan" v-for="(j,key) in i.data" :key="key" v-show="j.isShow"
             :class="j.isTdActive?'tdActive':''" @click="chooseTD(index,key)" @dblclick="bothDblclickTD(index,key)"
             @contextmenu.prevent="rightClick($event,'td')">
-            <input v-if="j.isTdEditor" :ref="'inputfocus'+key" v-model.trim="j.value" @blur="j.isTdEditor = false" />
+            <input v-if="j.isTdEditor" :ref="'inputfocusTD'+key" :class="'inputfocusTD'+key" v-model.trim="j.value"
+              @blur="j.isTdEditor = false" />
             <div v-else>{{j.value}}</div>
           </td>
         </tr>
@@ -26,6 +27,8 @@
       <ul class="ul" ref="ulRef">
         <li class="li" @click="liClick(1)">添加行表头</li>
         <li class="li" @click="liClick(2)">添加列表头</li>
+        <li class="li" @click="liClick(1.1)">删除行表头</li>
+        <li class="li" @click="liClick(2.1)">删除列表头</li>
         <li v-show="isShowMerge" class="li" @click="liClick(3)">合并单元格</li>
         <li v-show="isShowSplit" class="li" @click="liClick(4)">拆分单元格</li>
       </ul>
@@ -38,20 +41,21 @@
         <!-- <li v-show="isShowMerge" class="li" @click="liClick(3)">合并单元格</li> -->
       </ul>
     </div>
+
   </div>
 </template>
 
 <script>
   export default {
     name: 'vte',
-    props:{
-      align:{
-        type:String,
-        default:'center'
+    props: {
+      align: {
+        type: String,
+        default: 'center'
       },
-      width:{
-        type:[String],
-        default:'100%'
+      width: {
+        type: [String],
+        default: '100%'
       }
     },
     data() {
@@ -66,6 +70,7 @@
         ],
         data: [
           { data: [{ value: '内容' }, { value: '内容' }, { value: '内容' }, { value: '内容' }] },
+          { data: [{ value: '内容' }, { value: '内容' }, { value: '内容' }, { value: '内容' }] },
         ],
         isShowTHRightBox: false,
         isShowTDRightBox: false,
@@ -74,6 +79,10 @@
         chooseListTD: [],//存储准合并的td
         isShowMerge: false, // 是否显示合并单元格按钮
         rightClickType: '',//  右击类型 --- th or td
+        spliceTh: { //存储i,j 用来删除
+          i: '',
+          j: ''
+        }
       }
     },
     mounted() {
@@ -146,7 +155,7 @@
       },
       //td单击选中  --- 暂时不做td合并
       chooseTD(i, j) {
-        console.log(i,j);
+        console.log(i, j);
         // let temp;
         // this.data[i].data[j].isTdActive = !this.data[i].data[j].isTdActive;
         // if (this.data[i].data[j].isTdActive) {
@@ -181,16 +190,17 @@
       //td 双击事件
       bothDblclickTD(i, j) {
         this.data[i].data[j].isTdEditor = true;
-        // this.$refs.inputfocus.focus();
         this.$nextTick(() => {
-          let name = 'inputfocus' + j;
+          let name = 'inputfocusTD' + j;
           this.$refs[name][0].focus();
         });
       },
       //右击事件
-      rightClick(e, type) {
+      rightClick(e, type, i, j) {
         this.x = e.pageX;
         this.y = e.pageY;
+        this.spliceTh.i = i;
+        this.spliceTh.j = j;
         this.rightClickType = type;
         for (let z = 0; z < this.chooseList.length; z++) {
           let item = this.list[this.chooseList[z].i].list[this.chooseList[z].j];
@@ -219,31 +229,18 @@
       },
       //右击弹窗点击事件
       liClick(index) {
-        let list = [];
-        let name = this.rightClickType === 'th' ? 'list' : 'data';
         switch (index) {
           case 1:
-            for (let i = 0; i < this[name][0][name].length; i++) {
-              let tempList = Object.assign({}, this[name][0][name][i]);
-              tempList.isThEditor = false;
-              tempList.isThActive = false;
-              tempList.isShow = true;
-              tempList.colspanTh = 1;
-              tempList.rowspan = 1;
-              tempList.chooseList = [];
-              list.push(tempList)
-            }
-            console.log(list,'list');
-            if (this.rightClickType === 'th') this[name].push({ list: list });
-            if (this.rightClickType === 'td') this[name].push({ data: list });
+            this.addRow();
+            break;
+          case 1.1:
+            this.delRow();
+            break;
+          case 2.1:
+            this.delCol();
             break;
           case 2:
-            for (let i in this.list) {
-              this.list[i].list.push({ name: '表头', isThEditor: false, isThActive: false, isShow: true, colspanTh: 1, rowspan: 1, chooseList: [] })
-            }
-            for (let i in this.data) {
-              this.data[i].data.push({ value: '内容', isThEditor: false, isThActive: false, isShow: true, colspanTh: 1, rowspan: 1 })
-            }
+            this.addCol();
             break;
           case 3:
             this.merge()
@@ -254,7 +251,7 @@
           default:
             break;
         }
-
+        this.chooseList = [];
       },
       //获取当前选择的表头二维数组下标
       getCurrentTh(i, j) {
@@ -352,7 +349,20 @@
         if (jAllSet.length !== 1 && iAllSet.length !== 1) {
           if (!isExistMoreColspan && !isExistMoreRowspan) {
             if (colspanArr.length === rowspanArr.length) {
+              console.log(1);
               if (this.chooseList.length % 2 === 0) {
+                // if (!this.iIsAdjacent(iAllSet, iMin, iMax, jMin)) {
+                //   this.$message.warning("请选择相邻的21个表头")
+                //   //初始化
+                //   this.init();
+                //   return;
+                // }
+                // if (!this.jIsAdjacent(jAllSet, iMin, jMin, jMax)) {
+                //   this.$message.warning("请选择相邻的22个表头")
+                //   //初始化
+                //   this.init();
+                //   return;
+                // }
                 this.mergeColspanRow(iMin, iMax, jMin, jMax);
               } else {
                 this.$message.warning("请选择相邻的表头")
@@ -364,7 +374,6 @@
           } else {
             this.mergeColspanRow(iMin, iMax, jMin, jMax);
             if (colspanArr.length === rowspanArr.length) {
-              console.log("*****");
               this.mergeColspanRow(iMin, iMax, jMin, jMax);
             } else {
               console.log("&&&&");
@@ -419,6 +428,7 @@
           temp = arr[i];
           if (parseInt(temp) + 1 != parseInt(arr[i + 1])) flag = false;
         }
+        console.log(arr, 'arr');
         return flag
       },
       //列合并
@@ -515,62 +525,100 @@
           jMin = jMin > j ? j : jMin;
           iMax = iMax < i ? i : iMax;
           jMax = jMax < j ? j : jMax;
-          for (let z = 0; z < this.list[i].list[j].chooseList.length; z++) {
-            let a = this.list[i].list[j].chooseList[z].i;
-            let s = this.list[i].list[j].chooseList[z].j;
-            TiMin = TiMin > a ? a : TiMin;
-            TjMin = TjMin > s ? s : TjMin;
-            TiMax = TiMax < a ? a : TiMax;
-            TjMax = TjMax < s ? s : TjMax;
-          }
-          for (let z = TiMin; z <= TiMax; z++) {
-            for (let x = TjMin; x <= TjMax; x++) {
-              this.list[z].list[x].isShow = true;
-              this.list[z].list[x].colspanTh = 1;
-              this.list[z].list[x].rowspan = 1;
-              console.log(TiMax, TjMax);
+          console.log(this.list[i].list[j], '****', i, j);
+          if (this.list[i].list[j].chooseList) {
+            for (let z = 0; z < this.list[i].list[j].chooseList.length; z++) {
+              let a = this.list[i].list[j].chooseList[z].i;
+              let s = this.list[i].list[j].chooseList[z].j;
+              TiMin = TiMin > a ? a : TiMin;
+              TjMin = TjMin > s ? s : TjMin;
+              TiMax = TiMax < a ? a : TiMax;
+              TjMax = TjMax < s ? s : TjMax;
+            }
+            for (let z = TiMin; z <= TiMax; z++) {
+              for (let x = TjMin; x <= TjMax; x++) {
+                this.list[z].list[x].isShow = true;
+                this.list[z].list[x].colspanTh = 1;
+                this.list[z].list[x].rowspan = 1;
+                console.log(TiMax, TjMax);
+              }
             }
           }
         }
-
-        // for (let z = 0; z < this.list[iMin].list[jMin].chooseList.length; z++) {
-        //   let i = this.list[iMin].list[jMin].chooseList[z].i;
-        //   let j = this.list[iMin].list[jMin].chooseList[z].j;
-        //   TiMin = TiMin > i ? i : TiMin;
-        //   TjMin = TjMin > j ? j : TjMin;
-        //   TiMax = TiMax < i ? i : TiMax;
-        //   TjMax = TjMax < j ? j : TjMax;
-        // }
-        // for (let z = TiMin; z <= TiMax; z++) {
-        //   for (let x = TjMin; x <= TjMax; x++) {
-        //     this.list[z].list[x].isShow = true;
-        //     this.list[z].list[x].colspanTh = 1;
-        //     this.list[z].list[x].rowspan = 1;
-        //     console.log(TiMax, TjMax);
-        //   }
-        // }
-
-        // for (let z = 0; z < this.chooseList.length; z++) {
-        //   let i = this.chooseList[z].i;
-        //   let j = this.chooseList[z].j;
-        //   iMin = iMin > i ? i : iMin;
-        //   jMin = jMin > j ? j : jMin;
-        //   iMax = iMax < i ? i : iMax;
-        //   jMax = jMax < j ? j : jMax;
-        // }
-        // for (let z = iMin; z <= iMax; z++) {
-        //   for (let x = jMin; x <= jMax; x++) {
-        //     this.list[z].list[x].isShow = true;
-        //     this.list[z].list[x].colspanTh = 1;
-        //     this.list[z].list[x].rowspan = 1;
-        //   }
-        // }
+        /**
+        
+        **/
         //初始化
         this.init();
       },
       //获取表格内容
-      getTabData(){
-        return {list:this.list,data:this.data};
+      getTabData() {
+        return { list: this.list, data: this.data };
+      },
+      //添加行
+      addRow() {
+        let list = [];
+        let name = this.rightClickType === 'th' ? 'list' : 'data';
+        for (let i = 0; i < this[name][0][name].length; i++) {
+          let tempList = Object.assign({}, this[name][0][name][i]);
+          tempList.isThEditor = false;
+          tempList.isThActive = false;
+          tempList.isShow = true;
+          tempList.colspanTh = 1;
+          tempList.rowspan = 1;
+          tempList.chooseList = [];
+          list.push(tempList)
+        }
+        if (this.rightClickType === 'th') this[name].push({ list: list });
+        if (this.rightClickType === 'td') this[name].push({ data: list });
+      },
+      addCol() {
+        let list = [];
+        let name = this.rightClickType === 'th' ? 'list' : 'data';
+        for (let i in this.list) {
+          this.list[i].list.push({ name: '表头', isThEditor: false, isThActive: false, isShow: true, colspanTh: 1, rowspan: 1, chooseList: [] })
+        }
+        for (let i in this.data) {
+          this.data[i].data.push({ value: '内容', isTdEditor: false, isTdActive: false, isShow: true, colspanTh: 1, rowspan: 1 })
+        }
+      },
+      //删除行
+      delRow() {
+        if (this.list.length === 1) {
+          this.$message.warning("最少要有一个表头")
+          return;
+        }
+        let i = this.list.length;
+        let isTopDel = false;  // 删除的行是否是合并的第一个
+        for (let z = 0; z < this.list[this.spliceTh.i].list.length; z++) {
+          if (this.list[this.spliceTh.i].list[z].rowspan > 1) {
+            isTopDel = true;
+          }
+        }
+        for (let z = 0; z < i; z++) {
+          for (let x = 0; x < this.list[z].list.length; x++) {
+            if (this.list[z].list[x].rowspan > 1) {
+              this.list[z].list[x].rowspan = this.list[z].list[x].rowspan - 1;
+            } else {
+              isTopDel && (this.list[z].list[x].isShow = true)
+            }
+          }
+        }
+        this.list.splice(this.spliceTh.i, 1);
+      },
+      //删除列
+      delCol() {
+        if (this.list[0].list.length === 1 || this.list[this.spliceTh.i].list[this.spliceTh.j].colspanTh === this.list[0].list.length) {
+          this.$message.warning("最少要有一个表头")
+          return;
+        }
+        // 存在列合并的情况下，删除，会将合并的列以及内容全部删除
+        this.data.forEach(i => {
+          i.data.splice(this.spliceTh.j, this.list[this.spliceTh.i].list[this.spliceTh.j].colspanTh);
+        })
+        this.list.forEach(i => {
+          i.list.splice(this.spliceTh.j, this.list[this.spliceTh.i].list[this.spliceTh.j].colspanTh);
+        })
       }
     },
   }
@@ -585,16 +633,19 @@
   }
 
   .vte-table tr td {
-    border: 1px solid rgb(229, 229, 229);
-    height: 30px;
+    border: 1px solid #ebeef5;
+    height: 23px;
+    line-height: 23px;
+    font-size: 12px;
   }
 
   .vte-table tr th {
-    background-color: #EDF1F7;
-    border: 1px solid #fff;
-    height: 36px;
-    font-size: 14px;
-    color: #394550;
+    background: #f5f7fa;
+    border: 1px solid #ebeef5;
+    height: 23px;
+    line-height: 23px;
+    font-size: 12px;
+    color: #909399;
     font-weight: 600;
   }
 
